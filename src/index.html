@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Frango do Mindu — PDV V1.2</title>
+<title>Frango do Mindu — PDV V1.3</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
   <button class="nav" data-page="delivery">🛵 <span>Delivery</span></button>
   <button class="nav" data-page="relatorios">📈 <span>Relatórios</span></button>
   <button class="nav" data-page="config">⚙️ <span>Configurações</span></button>
-  <div class="sidebar-bottom"><small>Versão 1.2.1</small><small>desenvolvido Daniel Marques via IA</small></div>
+  <div class="sidebar-bottom"><small>Versão 1.3.0</small><small>desenvolvido Daniel Marques via IA</small></div>
 </aside>
 <main class="content">
 <header><div><h1 id="pageTitle">Dashboard</h1><p id="clock"></p></div><div class="status"><i></i><span id="cashStatus">Caixa aberto</span></div></header>
@@ -118,13 +118,29 @@
     <label>Endereço<input id="storeAddress"></label>
     <label>Telefone<input id="storePhone"></label>
     <label>Observação<input id="storeInfo"></label>
+
+    <h2 style="margin-top:30px;border-top:1px solid #333;padding-top:20px">🖨️ Impressora Térmica</h2>
+    <label>Nome da impressora (como aparece no Windows)
+      <input id="printerName" placeholder="Ex: ELGINi9">
+    </label>
+    <label>Largura do papel
+      <select id="printerPaper">
+        <option value="58mm" selected>58mm (padrão)</option>
+        <option value="80mm">80mm</option>
+      </select>
+    </label>
+    <div class="config-actions" style="margin-top:15px">
+      <button class="secondary" id="testPrint">🖨️ Testar impressão</button>
+    </div>
+
+    <h2 style="margin-top:30px;border-top:1px solid #333;padding-top:20px">💾 Backup de dados</h2>
     <div class="config-actions">
       <button class="primary" id="saveConfig">Salvar configurações</button>
       <button class="secondary" id="backupData">Fazer backup</button>
       <button class="secondary" id="restoreData">Restaurar backup</button>
       <button class="danger" id="resetData">Restaurar dados de demonstração</button>
     </div>
-    <p class="muted">Impressão térmica e impressora normal ficam preparadas para integração em uma próxima etapa. Esta V1.2 mantém o foco no PDV offline.</p>
+    <p class="muted">Impressão térmica configurada. Esta V1.3 mantém o foco no PDV offline.</p>
   </div>
 </section>
 

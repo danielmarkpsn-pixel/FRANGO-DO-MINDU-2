@@ -29,7 +29,7 @@ header p{margin:5px 0 0;color:#888}
 .catalog{padding:16px;min-height:650px}
 
 .search-row{display:flex;gap:10px;margin-bottom:16px}
-.search-row input,.toolbar input,.settings input,.settings textarea,.form-grid input,.form-grid select{background:#101010;border:1px solid #3a3a3a;color:white;border-radius:9px;padding:12px;width:100%;outline:none}
+.search-row input,.toolbar input,.settings input,.settings textarea,.form-grid input,.form-grid select,.settings select{background:#101010;border:1px solid #3a3a3a;color:white;border-radius:9px;padding:12px;width:100%;outline:none}
 .cats{display:flex;gap:7px;flex-wrap:wrap}
 .cat{background:#292929;color:#ddd;padding:9px 12px;border-radius:20px}
 .cat.active{background:var(--yellow);color:#111}
@@ -81,7 +81,7 @@ td .small-btn{background:#333;color:white;padding:6px 9px;border-radius:6px;marg
 
 .settings{max-width:850px}
 .settings label{display:block;color:#aaa;margin:15px 0}
-.settings input{display:block;margin-top:7px}
+.settings input,.settings select{display:block;margin-top:7px}
 .settings hr{border:0;border-top:1px solid #333;margin:25px 0}
 .config-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
 .muted{color:#777}

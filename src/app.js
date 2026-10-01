@@ -1,10 +1,16 @@
 /* =========================================================
-   Frango do Mindu PDV V1.2.1
+   Frango do Mindu PDV V1.3
    Desenvolvido por Daniel Marques via IA
    ========================================================= */
 
 const money = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0);
 const today = () => new Date().toISOString().slice(0, 10);
+
+/* ---------------- CONFIGURAÇÃO PADRÃO DA IMPRESSORA ---------------- */
+const defaultPrinterConfig = {
+  name: '',
+  paperSize: '58mm'
+};
 
 /* ---------------- DADOS DE DEMONSTRAÇÃO ---------------- */
 const defaultProducts = [
@@ -33,7 +39,13 @@ const demo = () => ({
   cashOpen: true,
   opening: 100,
   cashOpenedAt: new Date().toISOString(),
-  config: { name: 'Frango do Mindu', address: '', phone: '', info: 'Sabor em cada pedacinho!' }
+  config: {
+    name: 'Frango do Mindu',
+    address: '',
+    phone: '',
+    info: 'Sabor em cada pedacinho!',
+    printer: JSON.parse(JSON.stringify(defaultPrinterConfig))
+  }
 });
 
 /* ---------------- BANCO LOCAL ---------------- */
@@ -42,6 +54,10 @@ if (!db.categories) db.categories = [...new Set(db.products.map(p => p.category)
 if (!db.clients) db.clients = [];
 if (!db.delivery) db.delivery = [];
 if (!db.stockMoves) db.stockMoves = [];
+if (!db.config) db.config = { name: 'Frango do Mindu', address: '', phone: '', info: '' };
+if (!db.config.printer) db.config.printer = JSON.parse(JSON.stringify(defaultPrinterConfig));
+if (!db.config.printer.name) db.config.printer.name = '';
+if (!db.config.printer.paperSize) db.config.printer.paperSize = '58mm';
 
 /* --------- MIGRAÇÃO V1.1 → V1.2 --------- */
 db.products.forEach(p => {
@@ -97,7 +113,7 @@ function showPage(page) {
 }
 
 /* =========================================================
-   HELPERS: código automático, validação e imagem comprimida
+   HELPERS
    ========================================================= */
 function gerarCodigo(categoria) {
   const prefixo = (categoria || 'PRD').normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'PRD';
@@ -139,6 +155,114 @@ function fileToCompressedDataURL(file, maxSize = 200, quality = 0.75) {
     reader.readAsDataURL(file);
   });
 }
+
+/* =========================================================
+   IMPRESSÃO TÉRMICA
+   ========================================================= */
+async function imprimirCupom(order) {
+  const printerName = db.config?.printer?.name;
+  if (!printerName) {
+    console.warn('Impressora não configurada. Pulando impressão.');
+    return;
+  }
+
+  try {
+    const { PosPrinter } = require('electron-pos-printer');
+
+    const items = [];
+    order.items.forEach(i => {
+      const p = db.products.find(x => x.id === i.id);
+      items.push({
+        type: 'text',
+        value: `${i.qty}x ${p?.name || 'Item'}`,
+        style: { fontSize: '11px' }
+      });
+      items.push({
+        type: 'text',
+        value: `     ${money((p?.price || 0) * i.qty)}`,
+        style: { fontSize: '11px', textAlign: 'right' }
+      });
+    });
+
+    const data = [
+      { type: 'text', value: db.config.name || 'FRANGO DO MINDU', style: { fontWeight: '700', textAlign: 'center', fontSize: '16px' } },
+      { type: 'text', value: '==============================', style: { textAlign: 'center', fontSize: '10px' } },
+      { type: 'text', value: `Pedido: #${order.id}`, style: { fontSize: '12px' } },
+      { type: 'text', value: new Date(order.date).toLocaleString('pt-BR'), style: { fontSize: '11px' } },
+      { type: 'text', value: '------------------------------', style: { fontSize: '10px' } },
+      ...items,
+      { type: 'text', value: '------------------------------', style: { fontSize: '10px' } },
+      { type: 'text', value: `Subtotal: ${money(order.subtotal)}`, style: { fontSize: '11px' } }
+    ];
+
+    if (order.discount > 0) {
+      data.push({ type: 'text', value: `Desconto: -${money(order.discount)}`, style: { fontSize: '11px' } });
+    }
+
+    data.push({ type: 'text', value: `TOTAL: ${money(order.total)}`, style: { fontWeight: '700', textAlign: 'right', fontSize: '14px' } });
+    data.push({ type: 'text', value: `Pagamento: ${order.method}`, style: { textAlign: 'right', fontSize: '11px' } });
+
+    if (order.change > 0) {
+      data.push({ type: 'text', value: `Troco: ${money(order.change)}`, style: { textAlign: 'right', fontSize: '11px' } });
+    }
+
+    if (order.note) {
+      data.push({ type: 'text', value: `Obs: ${order.note}`, style: { fontSize: '10px' } });
+    }
+
+    data.push({ type: 'text', value: '.', style: { fontSize: '6px' } });
+    data.push({ type: 'text', value: 'Obrigado pela preferencia!', style: { textAlign: 'center', fontSize: '11px' } });
+    data.push({ type: 'text', value: '.', style: { fontSize: '6px' } });
+
+    const options = {
+      preview: false,
+      margin: '0 0 0 0',
+      copies: 1,
+      printerName: printerName,
+      timeOutPerLine: 400,
+      silent: true,
+      pageSize: db.config.printer?.paperSize || '58mm'
+    };
+
+    await PosPrinter.print(data, options);
+    console.log('Cupom impresso com sucesso.');
+  } catch (err) {
+    console.error('Erro ao imprimir cupom:', err);
+  }
+}
+
+qs('testPrint').onclick = async () => {
+  const printerName = qs('printerName').value.trim();
+  if (!printerName) return alert('Informe o nome da impressora primeiro.');
+
+  try {
+    const { PosPrinter } = require('electron-pos-printer');
+    const options = {
+      preview: false,
+      margin: '0 0 0 0',
+      copies: 1,
+      printerName: printerName,
+      timeOutPerLine: 400,
+      silent: true,
+      pageSize: qs('printerPaper').value || '58mm'
+    };
+    const data = [
+      { type: 'text', value: db.config.name || 'FRANGO DO MINDU', style: { fontWeight: '700', textAlign: 'center', fontSize: '16px' } },
+      { type: 'text', value: '==============================', style: { textAlign: 'center', fontSize: '10px' } },
+      { type: 'text', value: 'TESTE DE IMPRESSAO', style: { textAlign: 'center', fontSize: '14px' } },
+      { type: 'text', value: new Date().toLocaleString('pt-BR'), style: { textAlign: 'center', fontSize: '11px' } },
+      { type: 'text', value: '==============================', style: { textAlign: 'center', fontSize: '10px' } },
+      { type: 'text', value: 'Se voce esta vendo este cupom,', style: { fontSize: '11px' } },
+      { type: 'text', value: 'a impressora esta configurada!', style: { fontSize: '11px' } },
+      { type: 'text', value: '.', style: { fontSize: '6px' } },
+      { type: 'text', value: '.', style: { fontSize: '6px' } }
+    ];
+    await PosPrinter.print(data, options);
+    alert('Teste enviado para a impressora.');
+  } catch (err) {
+    alert('Falha na impressao: ' + err.message);
+  }
+};
 
 /* =========================================================
    TELA DE VENDA
@@ -213,7 +337,7 @@ qs('search').oninput = renderProducts;
 qs('discount').oninput = renderCart;
 qs('clearCart').onclick = () => { cart = []; renderCart(); };
 
-/* ---------------- MODAL GENÉRICO ---------------- */
+/* ---------------- MODAL ---------------- */
 function openModal(html) { qs('modalBody').innerHTML = html; qs('modal').classList.remove('hidden'); }
 function closeModal() { qs('modal').classList.add('hidden'); }
 qs('modalClose').onclick = closeModal;
@@ -314,6 +438,9 @@ function completeSale(method, total, change, discount) {
   qs('orderNo').textContent = '#' + nextOrder();
   renderCart();
   renderProducts();
+
+  imprimirCupom(order);
+
   alert(`Venda #${order.id} registrada com sucesso!\nPagamento: ${method}\nTroco: ${money(change)}`);
 }
 
@@ -334,10 +461,15 @@ function renderOrders() {
     <td><span class="tag">${esc(o.status || 'Recebido')}</span></td>
     <td>
       <button class="small-btn" data-view="${o.id}">Detalhes</button>
+      <button class="small-btn" data-print="${o.id}">🖨️</button>
       <button class="small-btn" data-cancel="${o.id}">Cancelar</button>
     </td>
   </tr>`).join('')}</tbody></table>`;
   document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => viewOrder(b.dataset.view));
+  document.querySelectorAll('[data-print]').forEach(b => b.onclick = () => {
+    const o = db.orders.find(x => x.id === b.dataset.print);
+    if (o) imprimirCupom(o);
+  });
   document.querySelectorAll('[data-cancel]').forEach(b => b.onclick = () => cancelOrder(b.dataset.cancel));
 }
 
@@ -350,7 +482,11 @@ function viewOrder(id) {
     <p>Desconto: ${money(o.discount)}</p>
     <h3>Total: ${money(o.total)}</h3>
     <p>Pagamento: ${esc(o.method)} • Troco: ${money(o.change)}</p>
-    <p>Observação: ${esc(o.note || '-')}</p>`);
+    <p>Observação: ${esc(o.note || '-')}</p>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeModal()">Fechar</button>
+      <button class="primary" onclick="closeModal(); imprimirCupom(db.orders.find(x=>x.id==='${o.id}'))">🖨️ Reimprimir</button>
+    </div>`);
 }
 
 function cancelOrder(id) {
@@ -926,6 +1062,8 @@ function renderConfig() {
   qs('storeAddress').value = db.config.address || '';
   qs('storePhone').value = db.config.phone || '';
   qs('storeInfo').value = db.config.info || '';
+  qs('printerName').value = db.config.printer?.name || '';
+  qs('printerPaper').value = db.config.printer?.paperSize || '58mm';
 }
 
 qs('saveConfig').onclick = () => {
@@ -933,9 +1071,14 @@ qs('saveConfig').onclick = () => {
     name: qs('storeName').value.trim() || 'Frango do Mindu',
     address: qs('storeAddress').value.trim(),
     phone: qs('storePhone').value.trim(),
-    info: qs('storeInfo').value.trim()
+    info: qs('storeInfo').value.trim(),
+    printer: {
+      name: qs('printerName').value.trim(),
+      paperSize: qs('printerPaper').value
+    }
   };
-  save(); alert('Configurações salvas.');
+  save();
+  alert('Configurações salvas.');
 };
 
 qs('backupData').onclick = () => {
