@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Frango do Mindu — PDV V1.2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+<aside class="sidebar">
+  <div class="brand"><img src="../assets/logo.png"><div><b>FRANGO DO MINDU</b><span>PDV • CAIXA 01</span></div></div>
+  <button class="nav active" data-page="dashboard">📊 <span>Dashboard</span></button>
+  <button class="nav" data-page="venda">🛒 <span>Nova venda</span></button>
+  <button class="nav" data-page="pedidos">📋 <span>Pedidos</span></button>
+  <button class="nav" data-page="produtos">🍗 <span>Produtos</span></button>
+  <button class="nav" data-page="categorias">🏷️ <span>Categorias</span></button>
+  <button class="nav" data-page="estoque">📦 <span>Estoque</span></button>
+  <button class="nav" data-page="caixa">💰 <span>Caixa</span></button>
+  <button class="nav" data-page="clientes">👤 <span>Clientes</span></button>
+  <button class="nav" data-page="delivery">🛵 <span>Delivery</span></button>
+  <button class="nav" data-page="cozinha">👨‍🍳 <span>Cozinha</span></button>
+  <button class="nav" data-page="relatorios">📈 <span>Relatórios</span></button>
+  <button class="nav" data-page="config">⚙️ <span>Configurações</span></button>
+  <div class="sidebar-bottom"><small>Versão 1.2.0</small><small>desenvolvido Daniel Marques via IA</small></div>
+</aside>
+<main class="content">
+<header><div><h1 id="pageTitle">Dashboard</h1><p id="clock"></p></div><div class="status"><i></i><span id="cashStatus">Caixa aberto</span></div></header>
+
+<section id="page-dashboard" class="page active-page">
+  <div id="dashboardCards" class="cards"></div>
+  <div class="two-col">
+    <div class="panel"><h2>Produtos mais vendidos</h2><div id="topProducts"></div></div>
+    <div class="panel"><h2>Formas de pagamento</h2><div id="paymentReport"></div></div>
+  </div>
+  <div class="panel low-panel"><h2>⚠️ Estoque baixo</h2><div id="lowStock"></div></div>
+</section>
+
+<section id="page-venda" class="page">
+  <div class="sale-layout">
+    <div class="catalog">
+      <div class="search-row">
+        <input id="search" placeholder="🔎 Buscar produto (nome ou código)...">
+        <div id="cats" class="cats"></div>
+      </div>
+      <div id="productGrid" class="product-grid"></div>
+    </div>
+    <div class="cart-panel">
+      <div class="cart-head"><b>Pedido <span id="orderNo"></span></b><button id="clearCart" class="link">Limpar</button></div>
+      <div id="cart" class="cart"></div>
+      <div class="totals">
+        <div><span>Subtotal</span><b id="subtotal">R$ 0,00</b></div>
+        <div><span>Desconto</span><input id="discount" type="number" min="0" value="0"></div>
+        <div><span>Observação</span><input id="saleNote" placeholder="Ex.: sem cebola"></div>
+        <div class="grand"><span>TOTAL</span><strong id="total">R$ 0,00</strong></div>
+        <button id="payBtn" class="primary big">FINALIZAR VENDA</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="page-pedidos" class="page">
+  <div class="toolbar"><input id="orderSearch" placeholder="Buscar pedido..."><button class="secondary" id="exportOrders">Exportar CSV</button></div>
+  <div id="ordersTable"></div>
+</section>
+
+<section id="page-produtos" class="page">
+  <div class="toolbar"><input id="productSearch" placeholder="Buscar produto (nome ou código)..."><button class="primary" id="addProduct">+ Novo produto</button></div>
+  <div id="productsTable"></div>
+</section>
+
+<section id="page-categorias" class="page">
+  <div class="toolbar"><input id="categoryName" placeholder="Nome da nova categoria"><button class="primary" id="addCategory">+ Criar categoria</button></div>
+  <div id="categoriesTable"></div>
+</section>
+
+<section id="page-estoque" class="page">
+  <div class="toolbar"><button class="primary" id="stockEntry">+ Entrada</button><button class="secondary" id="stockExit">− Saída</button><button class="secondary" id="stockAdjust">Ajuste</button></div>
+  <div class="panel"><h2>Movimentações de estoque</h2><div id="stockTable"></div></div>
+</section>
+
+<section id="page-caixa" class="page">
+  <div id="cashCards" class="cards"></div>
+  <div class="two-col">
+    <div class="panel"><h2>Movimentações</h2><div id="cashMoves"></div></div>
+    <div class="panel"><h2>Ações</h2>
+      <button class="secondary full" id="cashIn">+ Entrada</button>
+      <button class="secondary full" id="cashOut">− Sangria</button>
+      <button class="danger full" id="closeCash">Fechar caixa</button>
+      <button class="primary full" id="openCash">Abrir caixa</button>
+    </div>
+  </div>
+</section>
+
+<section id="page-clientes" class="page">
+  <div class="toolbar"><input id="clientSearch" placeholder="Buscar cliente..."><button class="primary" id="addClient">+ Novo cliente</button></div>
+  <div id="clientsTable"></div>
+</section>
+
+<section id="page-delivery" class="page">
+  <div class="toolbar"><button class="primary" id="addDelivery">+ Novo delivery</button></div>
+  <div id="deliveryTable"></div>
+</section>
+
+<section id="page-cozinha" class="page">
+  <div class="kitchen-grid">
+    <div class="panel"><h2>📥 Recebidos</h2><div id="kReceived"></div></div>
+    <div class="panel"><h2>🔥 Preparando</h2><div id="kPreparing"></div></div>
+    <div class="panel"><h2>✅ Prontos</h2><div id="kReady"></div></div>
+  </div>
+</section>
+
+<section id="page-relatorios" class="page">
+  <div id="reportCards" class="cards"></div>
+  <div class="two-col">
+    <div class="panel"><h2>Vendas por forma de pagamento</h2><div id="reportPayments"></div></div>
+    <div class="panel"><h2>Resumo</h2><div id="reportSummary"></div></div>
+  </div>
+</section>
+
+<section id="page-config" class="page">
+  <div class="panel settings">
+    <h2>Configurações</h2>
+    <label>Nome do estabelecimento<input id="storeName"></label>
+    <label>Endereço<input id="storeAddress"></label>
+    <label>Telefone<input id="storePhone"></label>
+    <label>Observação<input id="storeInfo"></label>
+    <div class="config-actions">
+      <button class="primary" id="saveConfig">Salvar configurações</button>
+      <button class="secondary" id="backupData">Fazer backup</button>
+      <button class="secondary" id="restoreData">Restaurar backup</button>
+      <button class="danger" id="resetData">Restaurar dados de demonstração</button>
+    </div>
+    <p class="muted">Impressão térmica e impressora normal ficam preparadas para integração em uma próxima etapa. Esta V1.2 mantém o foco no PDV offline.</p>
+  </div>
+</section>
+
+</main></div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <button class="close" id="modalClose">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<input id="fileRestore" type="file" accept=".json" hidden>
+<script src="app.js"></script>
+</body>
+</html>
