@@ -1,6 +1,6 @@
 {
   "name": "frango-do-mindu-pdv",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "PDV desktop offline do restaurante Frango do Mindu",
   "main": "src/main.js",
   "author": "Daniel Marques",
@@ -32,6 +32,7 @@
       "main": "src/main.js"
     },
     "win": {
+      "icon": "assets/logo.ico",
       "target": [
         {
           "target": "nsis",
@@ -46,7 +47,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Frango do Mindu PDV"
+      "shortcutName": "Frango do Mindu PDV",
+      "installerIcon": "assets/logo.ico",
+      "uninstallerIcon": "assets/logo.ico",
+      "installerHeaderIcon": "assets/logo.ico"
     }
   }
 }
