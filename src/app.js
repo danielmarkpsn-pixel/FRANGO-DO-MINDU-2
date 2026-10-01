@@ -253,7 +253,6 @@ function finishSale(method, total, discount) {
 }
 
 function completeSale(method, total, change, discount) {
-  // Validação de estoque (inclusive componentes de combos)
   for (const item of cart) {
     const p = db.products.find(x => x.id === item.id);
     if (p.type === 'combo') {
@@ -279,7 +278,6 @@ function completeSale(method, total, change, discount) {
   };
   db.orders.push(order);
 
-  // Baixa de estoque (combo baixa nos componentes)
   cart.forEach(i => {
     const p = db.products.find(x => x.id === i.id);
     if (p.type === 'combo') {
@@ -363,7 +361,6 @@ function cancelOrder(id) {
   o.cancelled = true;
   o.status = 'Cancelado';
 
-  // Devolve estoque (inclusive componentes de combo)
   o.items.forEach(i => {
     let p = db.products.find(x => x.id === i.id);
     if (!p) return;
@@ -767,4 +764,238 @@ function renderClients() {
     <td>${esc(c.name)}</td>
     <td>${esc(c.phone)}</td>
     <td>${esc(c.doc || '—')}</td>
-    <td>${esc
+    <td>${esc(c.address)}</td>
+    <td>
+      <button class="small-btn" data-client-edit="${c.id}">Editar</button>
+      <button class="small-btn" data-client-del="${c.id}">Excluir</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="5">Nenhum cliente cadastrado.</td></tr>'}</tbody></table>`;
+  document.querySelectorAll('[data-client-edit]').forEach(b => b.onclick = () => openClientForm(db.clients.find(c => c.id === +b.dataset.clientEdit)));
+  document.querySelectorAll('[data-client-del]').forEach(b => b.onclick = () => {
+    if (confirm('Excluir este cliente?')) {
+      db.clients = db.clients.filter(c => c.id !== +b.dataset.clientDel);
+      save(); renderClients();
+    }
+  });
+}
+
+function openClientForm(c = null) {
+  openModal(`<h2>${c ? 'Editar' : 'Novo'} cliente</h2>
+    <div class="form-grid">
+      <label>Nome<input id="cName" value="${esc(c?.name || '')}"></label>
+      <label>Telefone<input id="cPhone" value="${esc(c?.phone || '')}" placeholder="(00) 00000-0000"></label>
+      <label>CPF/CNPJ<input id="cDoc" value="${esc(c?.doc || '')}" placeholder="Opcional"></label>
+      <label>Data de nascimento<input id="cBirth" type="date" value="${esc(c?.birth || '')}"></label>
+      <label style="grid-column:span 2">Endereço<input id="cAddress" value="${esc(c?.address || '')}"></label>
+      <label style="grid-column:span 2">Observações<input id="cNotes" value="${esc(c?.notes || '')}"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeModal()">Cancelar</button>
+      <button class="primary" id="saveClient">Salvar</button>
+    </div>`);
+  qs('saveClient').onclick = () => {
+    const d = {
+      name: qs('cName').value.trim(),
+      phone: qs('cPhone').value.trim(),
+      doc: qs('cDoc').value.trim(),
+      birth: qs('cBirth').value,
+      address: qs('cAddress').value.trim(),
+      notes: qs('cNotes').value.trim()
+    };
+    if (!d.name) return alert('Informe o nome.');
+    if (c) Object.assign(c, d);
+    else db.clients.push({ id: Date.now(), ...d });
+    save(); closeModal(); renderClients();
+  };
+}
+
+qs('addClient').onclick = () => openClientForm();
+qs('clientSearch').oninput = renderClients;
+
+/* =========================================================
+   DELIVERY
+   ========================================================= */
+function renderDelivery() {
+  qs('deliveryTable').innerHTML = `<table><thead><tr>
+    <th>Pedido</th><th>Cliente</th><th>Endereço</th><th>Taxa</th><th>Entregador</th><th>Status</th><th>Pagamento</th><th>Ações</th>
+  </tr></thead><tbody>${db.delivery.slice().reverse().map(d => `<tr>
+    <td>#${d.order}</td>
+    <td>${esc(d.client)}</td>
+    <td>${esc(d.address)}</td>
+    <td>${money(d.fee)}</td>
+    <td>${esc(d.driver)}</td>
+    <td>${esc(d.status)}</td>
+    <td>${esc(d.payment)}</td>
+    <td><button class="small-btn" data-del-status="${d.id}">Avançar status</button></td>
+  </tr>`).join('') || '<tr><td colspan="8">Nenhum delivery cadastrado.</td></tr>'}</tbody></table>`;
+  document.querySelectorAll('[data-del-status]').forEach(b => b.onclick = () => {
+    let d = db.delivery.find(x => x.id === +b.dataset.delStatus);
+    let st = ['Recebido', 'Preparando', 'Saiu para entrega', 'Entregue'];
+    d.status = st[(st.indexOf(d.status) + 1) % st.length];
+    save(); renderDelivery(); renderKitchen();
+  });
+}
+
+qs('addDelivery').onclick = () => {
+  openModal(`<h2>Novo delivery</h2>
+    <div class="form-grid">
+      <label>Cliente<input id="dClient"></label>
+      <label>Telefone<input id="dPhone"></label>
+      <label>Endereço<input id="dAddress"></label>
+      <label>Taxa<input id="dFee" type="number" step="0.01" value="0"></label>
+      <label>Entregador<input id="dDriver"></label>
+      <label>Pagamento<select id="dPay"><option>Dinheiro</option><option>PIX</option><option>Débito</option><option>Crédito</option></select></label>
+    </div>
+    <div class="modal-actions">
+      <button class="primary" id="saveDelivery">Cadastrar</button>
+    </div>`);
+  qs('saveDelivery').onclick = () => {
+    let d = {
+      id: Date.now(),
+      order: nextOrder(),
+      client: qs('dClient').value.trim(),
+      phone: qs('dPhone').value.trim(),
+      address: qs('dAddress').value.trim(),
+      fee: Number(qs('dFee').value) || 0,
+      driver: qs('dDriver').value.trim(),
+      status: 'Recebido',
+      payment: qs('dPay').value
+    };
+    if (!d.client || !d.address) return alert('Informe cliente e endereço.');
+    db.delivery.push(d);
+    save(); closeModal(); renderDelivery(); renderKitchen();
+  };
+};
+
+/* =========================================================
+   COZINHA
+   ========================================================= */
+function renderKitchen() {
+  let statuses = ['Recebido', 'Preparando', 'Saiu para entrega'];
+  statuses.forEach((s, i) => {
+    let id = ['kReceived', 'kPreparing', 'kReady'][i];
+    let arr = db.orders.filter(o => (o.status || 'Recebido') === s && !o.cancelled).slice().reverse();
+    qs(id).innerHTML = arr.map(o => `<div class="k-card">
+      <b>#${o.id}</b>
+      <p>${o.items.map(x => { let p = db.products.find(p => p.id === x.id); return `${x.qty}x ${esc(p?.name || 'Produto')}`; }).join('<br>')}</p>
+      <small>${esc(o.note || 'Sem observação')}</small>
+      <button class="secondary full" data-k="${o.id}">Avançar</button>
+    </div>`).join('') || '<p class="muted">Nenhum pedido.</p>';
+  });
+  document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+    let o = db.orders.find(x => x.id === b.dataset.k);
+    let st = ['Recebido', 'Preparando', 'Pronto', 'Finalizado'];
+    o.status = st[Math.min(st.indexOf(o.status || 'Recebido') + 1, st.length - 1)];
+    save(); renderKitchen(); renderOrders();
+  });
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function renderDashboard() {
+  let sales = db.orders.filter(o => o.date.slice(0, 10) === today() && !o.cancelled);
+  let total = sales.reduce((s, o) => s + o.total, 0);
+  let avg = sales.length ? total / sales.length : 0;
+  qs('dashboardCards').innerHTML = `
+    <div class="card"><span>Faturamento hoje</span><strong>${money(total)}</strong></div>
+    <div class="card"><span>Vendas</span><strong>${sales.length}</strong></div>
+    <div class="card"><span>Ticket médio</span><strong>${money(avg)}</strong></div>
+    <div class="card"><span>Lucro estimado</span><strong>${money(sales.reduce((sum, o) => sum + o.items.reduce((z, i) => { let p = db.products.find(p => p.id === i.id); return z + (p ? (p.price - p.cost) * i.qty : 0); }, 0) - o.discount, 0))}</strong></div>`;
+
+  let count = {};
+  sales.forEach(o => o.items.forEach(i => count[i.id] = (count[i.id] || 0) + i.qty));
+  let top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  qs('topProducts').innerHTML = top.map(([id, q]) => {
+    let p = db.products.find(p => p.id == id);
+    return `<div class="move"><span>${p?.emoji || '🍗'} ${esc(p?.name || 'Produto')}</span><b>${q} un.</b></div>`;
+  }).join('') || '<p class="muted">Ainda não há vendas hoje.</p>';
+
+  let pay = {};
+  sales.forEach(o => pay[o.method] = (pay[o.method] || 0) + o.total);
+  qs('paymentReport').innerHTML = Object.entries(pay).map(([k, v]) => `<div class="move"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join('') || '<p class="muted">Sem pagamentos hoje.</p>';
+
+  let low = db.products.filter(p => p.active !== false && p.type !== 'combo' && p.stock <= p.minStock);
+  qs('lowStock').innerHTML = low.map(p => `<div class="move"><span>${p.emoji} ${esc(p.name)}</span><b class="low">${p.stock} / mín. ${p.minStock}</b></div>`).join('') || '<p class="muted">Nenhum produto abaixo do estoque mínimo.</p>';
+}
+
+/* =========================================================
+   RELATÓRIOS
+   ========================================================= */
+function renderReports() {
+  let sales = db.orders.filter(o => o.date.slice(0, 10) === today() && !o.cancelled);
+  let total = sales.reduce((s, o) => s + o.total, 0);
+  let profit = sales.reduce((sum, o) => sum + o.items.reduce((z, i) => { let p = db.products.find(p => p.id === i.id); return z + (p ? (p.price - p.cost) * i.qty : 0); }, 0) - o.discount, 0);
+  qs('reportCards').innerHTML = `
+    <div class="card"><span>Faturamento</span><strong>${money(total)}</strong></div>
+    <div class="card"><span>Pedidos</span><strong>${sales.length}</strong></div>
+    <div class="card"><span>Ticket médio</span><strong>${money(sales.length ? total / sales.length : 0)}</strong></div>
+    <div class="card"><span>Lucro estimado</span><strong>${money(profit)}</strong></div>`;
+  let pay = {};
+  sales.forEach(o => pay[o.method] = (pay[o.method] || 0) + o.total);
+  qs('reportPayments').innerHTML = Object.entries(pay).map(([k, v]) => `<div class="move"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join('') || '<p class="muted">Sem vendas.</p>';
+  qs('reportSummary').innerHTML = `
+    <p>Produtos cadastrados: <b>${db.products.length}</b></p>
+    <p>Clientes cadastrados: <b>${db.clients.length}</b></p>
+    <p>Produtos com estoque baixo: <b>${db.products.filter(p => p.type !== 'combo' && p.stock <= p.minStock).length}</b></p>
+    <p>Movimentações de caixa hoje: <b>${db.moves.filter(m => m.date.slice(0, 10) === today()).length}</b></p>`;
+}
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+function renderConfig() {
+  qs('storeName').value = db.config.name || '';
+  qs('storeAddress').value = db.config.address || '';
+  qs('storePhone').value = db.config.phone || '';
+  qs('storeInfo').value = db.config.info || '';
+}
+
+qs('saveConfig').onclick = () => {
+  db.config = {
+    name: qs('storeName').value.trim() || 'Frango do Mindu',
+    address: qs('storeAddress').value.trim(),
+    phone: qs('storePhone').value.trim(),
+    info: qs('storeInfo').value.trim()
+  };
+  save(); alert('Configurações salvas.');
+};
+
+qs('backupData').onclick = () => {
+  let blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup-frango-do-mindu.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+qs('restoreData').onclick = () => qs('fileRestore').click();
+qs('fileRestore').onchange = e => {
+  let f = e.target.files[0];
+  if (!f) return;
+  let r = new FileReader();
+  r.onload = () => {
+    try {
+      db = JSON.parse(r.result);
+      save();
+      location.reload();
+    } catch (err) { alert('Backup inválido.'); }
+  };
+  r.readAsText(f);
+};
+
+qs('resetData').onclick = () => {
+  if (confirm('Restaurar os dados de demonstração? Isso apagará os dados atuais deste computador.')) {
+    db = demo(); save(); location.reload();
+  }
+};
+
+/* =========================================================
+   INICIALIZAÇÃO
+   ========================================================= */
+qs('orderNo').textContent = '#' + nextOrder();
+renderCats();
+renderProducts();
+renderCart();
+renderDashboard();
