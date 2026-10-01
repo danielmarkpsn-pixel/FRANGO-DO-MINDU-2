@@ -1,0 +1,45 @@
+{
+  "name": "frango-do-mindu-pdv",
+  "version": "1.2.0",
+  "description": "PDV desktop offline do restaurante Frango do Mindu",
+  "main": "src/main.js",
+  "author": "Daniel Marques",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "br.com.frangodomindu.pdv",
+    "productName": "Frango do Mindu PDV",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Frango-do-Mindu-PDV-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
