@@ -1,1 +1,27 @@
+name: Frango do Mindu PDV - Windows
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v5
+      - name: Configurar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Instalar dependências
+        run: npm install
+      - name: Gerar instalador Windows
+        run: npm run build
+      - name: Publicar instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frango-do-Mindu-PDV-Windows-v1.1
+          path: dist/*.exe
