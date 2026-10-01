@@ -18,10 +18,9 @@
   <button class="nav" data-page="caixa">💰 <span>Caixa</span></button>
   <button class="nav" data-page="clientes">👤 <span>Clientes</span></button>
   <button class="nav" data-page="delivery">🛵 <span>Delivery</span></button>
-  <button class="nav" data-page="cozinha">👨‍🍳 <span>Cozinha</span></button>
   <button class="nav" data-page="relatorios">📈 <span>Relatórios</span></button>
   <button class="nav" data-page="config">⚙️ <span>Configurações</span></button>
-  <div class="sidebar-bottom"><small>Versão 1.2.0</small><small>desenvolvido Daniel Marques via IA</small></div>
+  <div class="sidebar-bottom"><small>Versão 1.2.1</small><small>desenvolvido Daniel Marques via IA</small></div>
 </aside>
 <main class="content">
 <header><div><h1 id="pageTitle">Dashboard</h1><p id="clock"></p></div><div class="status"><i></i><span id="cashStatus">Caixa aberto</span></div></header>
@@ -69,7 +68,10 @@
 </section>
 
 <section id="page-categorias" class="page">
-  <div class="toolbar"><input id="categoryName" placeholder="Nome da nova categoria"><button class="primary" id="addCategory">+ Criar categoria</button></div>
+  <div class="toolbar">
+    <input id="categoryName" placeholder="Nome da nova categoria">
+    <button class="primary" id="addCategory">+ Criar categoria</button>
+  </div>
   <div id="categoriesTable"></div>
 </section>
 
@@ -99,14 +101,6 @@
 <section id="page-delivery" class="page">
   <div class="toolbar"><button class="primary" id="addDelivery">+ Novo delivery</button></div>
   <div id="deliveryTable"></div>
-</section>
-
-<section id="page-cozinha" class="page">
-  <div class="kitchen-grid">
-    <div class="panel"><h2>📥 Recebidos</h2><div id="kReceived"></div></div>
-    <div class="panel"><h2>🔥 Preparando</h2><div id="kPreparing"></div></div>
-    <div class="panel"><h2>✅ Prontos</h2><div id="kReady"></div></div>
-  </div>
 </section>
 
 <section id="page-relatorios" class="page">

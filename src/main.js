@@ -14,7 +14,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     autoHideMenuBar: true,
-    title: 'Frango do Mindu PDV'
+    title: 'Frango do Mindu PDV',
+    icon: path.join(__dirname, '..', 'assets', 'logo.ico')
   });
   win.loadFile(path.join(__dirname, 'index.html'));
 }

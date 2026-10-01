@@ -1,5 +1,5 @@
 /* =========================================================
-   Frango do Mindu PDV V1.2
+   Frango do Mindu PDV V1.2.1
    Desenvolvido por Daniel Marques via IA
    ========================================================= */
 
@@ -71,7 +71,7 @@ renderClock();
 const titles = {
   dashboard: 'Dashboard', venda: 'Nova venda', pedidos: 'Pedidos', produtos: 'Produtos',
   categorias: 'Categorias', estoque: 'Estoque', caixa: 'Caixa', clientes: 'Clientes',
-  delivery: 'Delivery', cozinha: 'Cozinha', relatorios: 'Relatórios', config: 'Configurações'
+  delivery: 'Delivery', relatorios: 'Relatórios', config: 'Configurações'
 };
 
 document.querySelectorAll('.nav').forEach(b => b.onclick = () => showPage(b.dataset.page));
@@ -91,7 +91,6 @@ function showPage(page) {
     caixa: renderCash,
     clientes: renderClients,
     delivery: renderDelivery,
-    cozinha: renderKitchen,
     relatorios: renderReports,
     config: renderConfig
   }[page] || (() => {}))();
@@ -613,8 +612,8 @@ function renderCategories() {
     <td>${esc(c)}</td>
     <td>${db.products.filter(p => p.category === c).length}</td>
     <td>
-      <button class="small-btn" data-cat-edit="${esc(c)}">Renomear</button>
-      <button class="small-btn" data-cat-del="${esc(c)}">Excluir</button>
+      <button class="small-btn" data-cat-edit="${esc(c)}" style="background:#ffc400;color:#111">✏️ Editar</button>
+      <button class="small-btn" data-cat-del="${esc(c)}" style="background:#762421">🗑️ Excluir</button>
     </td>
   </tr>`).join('')}</tbody></table>`;
   document.querySelectorAll('[data-cat-edit]').forEach(b => b.onclick = () => {
@@ -629,6 +628,7 @@ function renderCategories() {
   document.querySelectorAll('[data-cat-del]').forEach(b => b.onclick = () => {
     let c = b.dataset.catDel;
     if (db.products.some(p => p.category === c)) return alert('A categoria possui produtos. Reclassifique-os antes de excluir.');
+    if (!confirm(`Excluir a categoria "${c}"?`)) return;
     db.categories = db.categories.filter(x => x !== c);
     save(); renderCategories(); renderCats();
   });
@@ -832,7 +832,7 @@ function renderDelivery() {
     let d = db.delivery.find(x => x.id === +b.dataset.delStatus);
     let st = ['Recebido', 'Preparando', 'Saiu para entrega', 'Entregue'];
     d.status = st[(st.indexOf(d.status) + 1) % st.length];
-    save(); renderDelivery(); renderKitchen();
+    save(); renderDelivery();
   });
 }
 
@@ -863,32 +863,9 @@ qs('addDelivery').onclick = () => {
     };
     if (!d.client || !d.address) return alert('Informe cliente e endereço.');
     db.delivery.push(d);
-    save(); closeModal(); renderDelivery(); renderKitchen();
+    save(); closeModal(); renderDelivery();
   };
 };
-
-/* =========================================================
-   COZINHA
-   ========================================================= */
-function renderKitchen() {
-  let statuses = ['Recebido', 'Preparando', 'Saiu para entrega'];
-  statuses.forEach((s, i) => {
-    let id = ['kReceived', 'kPreparing', 'kReady'][i];
-    let arr = db.orders.filter(o => (o.status || 'Recebido') === s && !o.cancelled).slice().reverse();
-    qs(id).innerHTML = arr.map(o => `<div class="k-card">
-      <b>#${o.id}</b>
-      <p>${o.items.map(x => { let p = db.products.find(p => p.id === x.id); return `${x.qty}x ${esc(p?.name || 'Produto')}`; }).join('<br>')}</p>
-      <small>${esc(o.note || 'Sem observação')}</small>
-      <button class="secondary full" data-k="${o.id}">Avançar</button>
-    </div>`).join('') || '<p class="muted">Nenhum pedido.</p>';
-  });
-  document.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
-    let o = db.orders.find(x => x.id === b.dataset.k);
-    let st = ['Recebido', 'Preparando', 'Pronto', 'Finalizado'];
-    o.status = st[Math.min(st.indexOf(o.status || 'Recebido') + 1, st.length - 1)];
-    save(); renderKitchen(); renderOrders();
-  });
-}
 
 /* =========================================================
    DASHBOARD
