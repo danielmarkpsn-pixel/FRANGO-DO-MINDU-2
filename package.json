@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win --publish never"
+    "build": "electron-builder --win --publish never",
+    "build:dir": "electron-builder --win --dir --publish never"
   },
   "devDependencies": {
     "electron": "^38.2.0",
@@ -17,29 +18,35 @@
     "appId": "br.com.frangodomindu.pdv",
     "productName": "Frango do Mindu PDV",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "files": [
       "src/**/*",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      "!**/*.map",
+      "!**/node_modules/.cache"
     ],
+    "extraMetadata": {
+      "main": "src/main.js"
+    },
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
       ],
       "artifactName": "Frango-do-Mindu-PDV-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "shortcutName": "Frango do Mindu PDV"
     }
   }
 }
